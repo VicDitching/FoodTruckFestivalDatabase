@@ -1,4 +1,3 @@
-
 import sys
 import getpass
 import mysql.connector
@@ -6,7 +5,7 @@ from mysql.connector import Error
 
 def connect_db():
     print("Food Truck Festival Management Portal")
-    user = input("Enter DB Usernmae [ftf_app]: ").strip)_ or "ftf_app"
+    user = input("Enter DB Usernmae [ftf_app]: ").strip() or "ftf_app"
     password = getpass.getpass("Enter DB password: ")
 
     try:
@@ -23,22 +22,22 @@ def connect_db():
         print(f"\nConnection Error: {e}")
         sys.exit(1)
 
-    def print_table(headers, rows):
-        if not rows:
-            print("\n[No records found.]")
-            return
-        print("\n" + " | ".join(headers))
-        print("-" * 75)
-        for row in rows:
-            print(" | ".join(str(val) for val in row))
-        print(f"\nTotal Records: {len(rows)}")
+def print_table(headers, rows):
+    if not rows:
+        print("\n[No records found.]")
+        return
+    print("\n" + " | ".join(headers))
+    print("-" * 75)
+    for row in rows:
+        print(" | ".join(str(val) for val in row))
+    print(f"\nTotal Records: {len(rows)}")
 
 #search (SELECT with WHERE)
 def search_customers(conn):
     print("\n Search Customer by Last Name")
     term = input("Enter last name (or prefix): ").strip()
     query = """
-        SELECT CustomerID, FirtName, LastName, Email, Phone, CreatedAt
+        SELECT CustomerID, FirstName, LastName, Email, Phone, CreatedAt
         FROM Customer
         WHERE LastName LIKE %s
     """
@@ -52,7 +51,7 @@ def search_customers(conn):
 def vendor_sales_summary(conn):
     print("\nVendor Sales & Order Summary")
     query = """
-        SELECT v.ComapnyName, ft.TruckName, COUNT(co.OrderID) AS TotalOrders, COALESCE(SUM(co.TotalAmount), 0.00) AS TotalRevenue
+        SELECT v.CompanyName, ft.TruckName, COUNT(co.OrderID) AS TotalOrders, COALESCE(SUM(co.TotalAmount), 0.00) AS TotalRevenue
         FROM FoodTruck ft
         JOIN Vendor v ON ft.VendorID = v.VendorID
         LEFT JOIN EventRegistration er ON ft.TruckID = er.TruckID
@@ -104,7 +103,7 @@ def update_customer_contact(conn):
 
 # -------------------- READ FOOD TRUCKS --------------------
 
-def get_all_food_trucks(connection):
+def get_all_food_trucks(conn):
     """Return every food truck and its info"""
     query = """
         SELECT ft.TruckID, ft.TruckName, ft.LicensePlate,
@@ -113,7 +112,7 @@ def get_all_food_trucks(connection):
         LEFT JOIN Vendor AS v ON ft.VendorID = v.VendorID
         ORDER BY ft.TruckName
     """
-    cursor = connection.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True)
     try:
         cursor.execute(query)
         return cursor.fetchall()
@@ -121,7 +120,7 @@ def get_all_food_trucks(connection):
         cursor.close()
 
 
-def get_food_truck(connection, truck_id):
+def get_food_truck(conn, truck_id):
     """Return a single food truck """
     query = "SELECT * FROM FoodTruck WHERE TruckID = %s"
     cursor = connection.cursor(dictionary=True)
@@ -132,7 +131,7 @@ def get_food_truck(connection, truck_id):
         cursor.close()
 
 
-def get_food_truck_menu(connection, truck_id):
+def get_food_truck_menu(conn, truck_id):
     """Return all menu items from a truck"""
     query = """
         SELECT MenuItemID, ItemName, Description, Price,
@@ -151,7 +150,7 @@ def get_food_truck_menu(connection, truck_id):
 
 # -------------------- ADD --------------------
 
-def add_food_truck(connection, truck_id, truck_name, license_plate, vendor_id):
+def add_food_truck(conn, truck_id, truck_name, license_plate, vendor_id):
     """Insert a food truck, VendorID needs to be an existing vendor"""
     query = """
         INSERT INTO FoodTruck (TruckID, TruckName, LicensePlate, VendorID)
@@ -168,7 +167,7 @@ def add_food_truck(connection, truck_id, truck_name, license_plate, vendor_id):
         cursor.close()
 
 
-def add_customer(connection, customer_id, first_name, last_name, email, phone):
+def add_customer(conn, customer_id, first_name, last_name, email, phone):
     """Insert a new customer setting CreatedAt to the current database time."""
     query = """
         INSERT INTO Customer
@@ -188,7 +187,7 @@ def add_customer(connection, customer_id, first_name, last_name, email, phone):
 
 # -------------------- EDIT FOOD TRUCKS --------------------
 
-def update_food_truck(connection, truck_id, truck_name, license_plate, vendor_id):
+def update_food_truck(conn, truck_id, truck_name, license_plate, vendor_id):
     """Update all editable fields for the truck with this TruckID."""
     query = """
         UPDATE FoodTruck
@@ -207,7 +206,7 @@ def update_food_truck(connection, truck_id, truck_name, license_plate, vendor_id
         cursor.close()
 
 
-def update_food_truck_name(connection, truck_id, new_name):
+def update_food_truck_name(conn, truck_id, new_name):
     """Change only a truck's name."""
     query = "UPDATE FoodTruck SET TruckName = %s WHERE TruckID = %s"
     cursor = connection.cursor()
@@ -222,7 +221,7 @@ def update_food_truck_name(connection, truck_id, new_name):
         cursor.close()
 
 
-def update_food_truck_license_plate(connection, truck_id, new_license_plate):
+def update_food_truck_license_plate(conn, truck_id, new_license_plate):
     """Change only a truck's license plate."""
     query = "UPDATE FoodTruck SET LicensePlate = %s WHERE TruckID = %s"
     cursor = connection.cursor()
@@ -237,7 +236,7 @@ def update_food_truck_license_plate(connection, truck_id, new_license_plate):
         cursor.close()
 
 
-def update_food_truck_vendor(connection, truck_id, new_vendor_id):
+def update_food_truck_vendor(conn, truck_id, new_vendor_id):
     """Assign a truck to a different existing vendor."""
     query = "UPDATE FoodTruck SET VendorID = %s WHERE TruckID = %s"
     cursor = connection.cursor()
@@ -254,7 +253,7 @@ def update_food_truck_vendor(connection, truck_id, new_vendor_id):
 
 # -------------------- DELETE FOOD TRUCK --------------------
 
-def delete_food_truck(connection, truck_id):
+def delete_food_truck(conn, truck_id):
     """Delete a truck by ID."""
     query = "DELETE FROM FoodTruck WHERE TruckID = %s"
     cursor = connection.cursor()
@@ -267,3 +266,4 @@ def delete_food_truck(connection, truck_id):
         raise
     finally:
         cursor.close()
+        
