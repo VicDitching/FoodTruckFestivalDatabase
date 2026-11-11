@@ -123,7 +123,7 @@ def get_all_food_trucks(conn):
 def get_food_truck(conn, truck_id):
     """Return a single food truck """
     query = "SELECT * FROM FoodTruck WHERE TruckID = %s"
-    cursor = connection.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True)
     try:
         cursor.execute(query, (truck_id,))
         return cursor.fetchone()
@@ -140,7 +140,7 @@ def get_food_truck_menu(conn, truck_id):
         WHERE TruckID = %s
         ORDER BY ItemName
     """
-    cursor = connection.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True)
     try:
         cursor.execute(query, (truck_id,))
         return cursor.fetchall()
@@ -156,12 +156,12 @@ def add_food_truck(conn, truck_id, truck_name, license_plate, vendor_id):
         INSERT INTO FoodTruck (TruckID, TruckName, LicensePlate, VendorID)
         VALUES (%s, %s, %s, %s)
     """
-    cursor = connection.cursor()
+    cursor = conn.cursor()
     try:
         cursor.execute(query, (truck_id, truck_name, license_plate, vendor_id))
-        connection.commit()
+        conn.commit()
     except Exception:
-        connection.rollback()
+        conn.rollback()
         raise
     finally:
         cursor.close()
@@ -174,12 +174,12 @@ def add_customer(conn, customer_id, first_name, last_name, email, phone):
             (CustomerID, FirstName, LastName, Email, Phone, CreatedAt)
         VALUES (%s, %s, %s, %s, %s, NOW())
     """
-    cursor = connection.cursor()
+    cursor = conn.cursor()
     try:
         cursor.execute(query, (customer_id, first_name, last_name, email, phone))
-        connection.commit()
+        conn.commit()
     except Exception:
-        connection.rollback()
+        conn.rollback()
         raise
     finally:
         cursor.close()
@@ -194,13 +194,13 @@ def update_food_truck(conn, truck_id, truck_name, license_plate, vendor_id):
         SET TruckName = %s, LicensePlate = %s, VendorID = %s
         WHERE TruckID = %s
     """
-    cursor = connection.cursor()
+    cursor = conn.cursor()
     try:
         cursor.execute(query, (truck_name, license_plate, vendor_id, truck_id))
-        connection.commit()
+        conn.commit()
         return cursor.rowcount
     except Exception:
-        connection.rollback()
+        conn.rollback()
         raise
     finally:
         cursor.close()
@@ -209,13 +209,13 @@ def update_food_truck(conn, truck_id, truck_name, license_plate, vendor_id):
 def update_food_truck_name(conn, truck_id, new_name):
     """Change only a truck's name."""
     query = "UPDATE FoodTruck SET TruckName = %s WHERE TruckID = %s"
-    cursor = connection.cursor()
+    cursor = conn.cursor()
     try:
         cursor.execute(query, (new_name, truck_id))
-        connection.commit()
+        conn.commit()
         return cursor.rowcount
     except Exception:
-        connection.rollback()
+        conn.rollback()
         raise
     finally:
         cursor.close()
@@ -224,13 +224,13 @@ def update_food_truck_name(conn, truck_id, new_name):
 def update_food_truck_license_plate(conn, truck_id, new_license_plate):
     """Change only a truck's license plate."""
     query = "UPDATE FoodTruck SET LicensePlate = %s WHERE TruckID = %s"
-    cursor = connection.cursor()
+    cursor = conn.cursor()
     try:
         cursor.execute(query, (new_license_plate, truck_id))
-        connection.commit()
+        conn.commit()
         return cursor.rowcount
     except Exception:
-        connection.rollback()
+        conn.rollback()
         raise
     finally:
         cursor.close()
@@ -239,13 +239,13 @@ def update_food_truck_license_plate(conn, truck_id, new_license_plate):
 def update_food_truck_vendor(conn, truck_id, new_vendor_id):
     """Assign a truck to a different existing vendor."""
     query = "UPDATE FoodTruck SET VendorID = %s WHERE TruckID = %s"
-    cursor = connection.cursor()
+    cursor = conn.cursor()
     try:
         cursor.execute(query, (new_vendor_id, truck_id))
-        connection.commit()
+        conn.commit()
         return cursor.rowcount
     except Exception:
-        connection.rollback()
+        conn.rollback()
         raise
     finally:
         cursor.close()
@@ -256,13 +256,13 @@ def update_food_truck_vendor(conn, truck_id, new_vendor_id):
 def delete_food_truck(conn, truck_id):
     """Delete a truck by ID."""
     query = "DELETE FROM FoodTruck WHERE TruckID = %s"
-    cursor = connection.cursor()
+    cursor = conn.cursor()
     try:
         cursor.execute(query, (truck_id,))
-        connection.commit()
+        conn.commit()
         return cursor.rowcount
     except Exception:
-        connection.rollback()
+        conn.rollback()
         raise
     finally:
         cursor.close()
