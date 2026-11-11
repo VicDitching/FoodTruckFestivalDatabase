@@ -1,5 +1,106 @@
 
+import sys
+import getpass
+import mysql.connector
+from mysql.connector import Error
 
+def connect_db():
+    print("Food Truck Festival Management Portal")
+    user = input("Enter DB Usernmae [ftf_app]: ").strip)_ or "ftf_app"
+    password = getpass.getpass("Enter DB password: ")
+
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user=user,
+            password=password,
+            database="FoodTruckFestival"
+        )
+        if conn.is_connected():
+            print("\nSuccessfully connected to MySQL Database!")
+            return conn
+    except Error as e:
+        print(f"\nConnection Error: {e}")
+        sys.exit(1)
+
+    def print_table(headers, rows):
+        if not rows:
+            print("\n[No records found.]")
+            return
+        print("\n" + " | ".join(headers))
+        print("-" * 75)
+        for row in rows:
+            print(" | ".join(str(val) for val in row))
+        print(f"\nTotal Records: {len(rows)}")
+
+#search (SELECT with WHERE)
+def search_customers(conn):
+    print("\n Search Customer by Last Name")
+    term = input("Enter last name (or prefix): ").strip()
+    query = """
+        SELECT CustomerID, FirtName, LastName, Email, Phone, CreatedAt
+        FROM Customer
+        WHERE LastName LIKE %s
+    """
+    cursor = conn.cursor()
+    cursor.execute(query, (f"(term)%",))
+    rows = cursor.fetchall()
+    print_table(["ID", "First Name", "Last Name", "Email", "Phone", "Created At"], rows)
+    cursor.close()
+
+#summary (GROUP BY with COUNT and SUM)
+def vendor_sales_summary(conn):
+    print("\nVendor Sales & Order Summary")
+    query = """
+        SELECT v.ComapnyName, ft.TruckName, COUNT(co.OrderID) AS TotalOrders, COALESCE(SUM(co.TotalAmount), 0.00) AS TotalRevenue
+        FROM FoodTruck ft
+        JOIN Vendor v ON ft.VendorID = v.VendorID
+        LEFT JOIN EventRegistration er ON ft.TruckID = er.TruckID
+        LEFT JOIN CustomerOrder co ON er.RegistrationID = co.RegistrationID
+        GROUP BY v.CompanyName, ft.TruckName
+        ORDER BY TotalRevenue DESC
+    """
+    cursor = conn.cursor()
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    print_table(["Vendor", "Truck Name", "Orders Placed", "Total Sales ($)"], rows)
+    cursor.close()
+
+#subquery (above-average menu items)
+def high_value_menu_items(conn):
+    print("\nPremium Menu Items (Priced Above Fleet Average)")
+    query = """
+        SELECT MenuItemID, ItemName, Price, DietaryFlags, Availability
+        FROM MenuItem
+        WHERE Price > (SELECT AVG(Price) FROM MenuItem)
+        ORDER BY Price DESC
+    """
+    cursor = conn.cursor()
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    print_table(["Item ID", "Item Name", "Price ($)", "Dietary Flags", "Available"], rows)
+    cursor.close()
+
+#change (UPDATE)
+def update_customer_contact(conn):
+    print("\nUpdate Customer Phone Number")
+    cid = input("Enter Customer ID: ").strip()
+    new_phone = input("Enter New Phone Number: ").strip()
+
+    query = "UPDATE Customer SET Phone = %s WHERE CustomerID = %s"
+    cursor = conn.cursor()
+    try:
+        cursor.execute(query, (new_phone, cid))
+        if cursor.rowcount == 0:
+           print("\n[Notice]: No customer found with that ID. No chnages made.")
+        else:
+            conn.commit()
+            print(f"\nSuccessfully updated phone number for Customer ID {cid}.")
+    except Error as e:
+        conn.rollback()
+        print(f"\n[Error]: {e}")
+    finally:
+        cursor.close()
 
 # -------------------- READ FOOD TRUCKS --------------------
 
