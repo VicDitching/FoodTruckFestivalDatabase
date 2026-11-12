@@ -1,11 +1,14 @@
 import sys
 import getpass
+import datetime
+from decimal import Decimal
 import mysql.connector
 from mysql.connector import Error
+from mysql.connector.constants import ClientFlag
 
 def connect_db():
-    print("Food Truck Festival Management Portal")
-    user = input("Enter DB Usernmae [ftf_app]: ").strip() or "ftf_app"
+    print_heading("Food Truck Festival Management Portal")
+    user = input("Enter DB Username [ftf_app]: ").strip() or "ftf_app"
     password = getpass.getpass("Enter DB password: ")
 
     try:
@@ -13,24 +16,73 @@ def connect_db():
             host="localhost",
             user=user,
             password=password,
-            database="FoodTruckFestival"
+            database="FoodTruckFestival",
+            # Make rowcount report rows *matched*, not just rows changed, so an
+            # UPDATE that sets a value to what it already was isn't treated as
+            # "no record found".
+            client_flags=[ClientFlag.FOUND_ROWS],
         )
-        if conn.is_connected():
-            print("\nSuccessfully connected to MySQL Database!")
-            return conn
+        print("\nSuccessfully connected to MySQL Database!")
+        return conn
     except Error as e:
-        print(f"\nConnection Error: {e}")
+        if e.errno == 1045:
+            print("\nLogin failed: wrong username or password.")
+        elif e.errno == 1049:
+            print("\nThe FoodTruckFestival database does not exist. Run setup.sql first.")
+        elif e.errno == 1044:
+            print("\nThis account is not allowed to use the FoodTruckFestival database.")
+        elif e.errno in (2003, 2005):
+            print("\nCould not reach the MySQL server. Make sure it is running.")
+        else:
+            print("\nCould not connect to the database.")
         sys.exit(1)
 
-def print_table(headers, rows):
+# -------------------- DISPLAY HELPERS (interface code, AI-assisted) --------------------
+
+def print_heading(title):
+    print("\n" + title)
+    print("=" * len(title))
+
+
+def _format_cell(header, value):
+    if value is None:
+        return "-"
+    if header == "Available":
+        return "Yes" if value else "No"
+    if isinstance(value, (Decimal, float)):
+        return f"{value:,.2f}"
+    if isinstance(value, datetime.datetime):
+        return value.strftime("%Y-%m-%d %H:%M")
+    if isinstance(value, datetime.date):
+        return value.isoformat()
+    return str(value)
+
+
+def print_table(headers, rows, max_width=40):
+    """Print rows as a lined-up table. Numbers are right-aligned."""
     if not rows:
-        print("\n[No records found.]")
+        print("\n  No records found.")
         return
-    print("\n" + " | ".join(headers))
-    print("-" * 75)
-    for row in rows:
-        print(" | ".join(str(val) for val in row))
-    print(f"\nTotal Records: {len(rows)}")
+
+    cells = [[_format_cell(h, v) for h, v in zip(headers, row)] for row in rows]
+    cells = [[c if len(c) <= max_width else c[:max_width - 3] + "..." for c in row]
+             for row in cells]
+    widths = [max(len(h), *(len(row[i]) for row in cells)) for i, h in enumerate(headers)]
+    numeric = [all(isinstance(row[i], (int, float, Decimal)) or row[i] is None
+                   for row in rows) and headers[i] != "Available"
+               for i in range(len(headers))]
+
+    def line(values):
+        return "  " + " | ".join(
+            v.rjust(w) if num else v.ljust(w)
+            for v, w, num in zip(values, widths, numeric))
+
+    print()
+    print(line(headers))
+    print("  " + "-+-".join("-" * w for w in widths))
+    for row in cells:
+        print(line(row))
+    print(f"\n  {len(rows)} record{'s' if len(rows) != 1 else ''} found.")
 
 #search (SELECT with WHERE)
 def search_customers(conn):
@@ -42,7 +94,7 @@ def search_customers(conn):
         WHERE LastName LIKE %s
     """
     cursor = conn.cursor()
-    cursor.execute(query, (f"(term)%",))
+    cursor.execute(query, (f"{term}%",))
     rows = cursor.fetchall()
     print_table(["ID", "First Name", "Last Name", "Email", "Phone", "Created At"], rows)
     cursor.close()
@@ -54,8 +106,8 @@ def vendor_sales_summary(conn):
         SELECT v.CompanyName, ft.TruckName, COUNT(co.OrderID) AS TotalOrders, COALESCE(SUM(co.TotalAmount), 0.00) AS TotalRevenue
         FROM FoodTruck ft
         JOIN Vendor v ON ft.VendorID = v.VendorID
-        LEFT JOIN EventRegistration er ON ft.TruckID = er.TruckID
-        LEFT JOIN CustomerOrder co ON er.RegistrationID = co.RegistrationID
+        LEFT JOIN EventRegistration er ON ft.TruckID = er.TruckID 
+        LEFT JOIN CustomerOrder co ON er.RegistrationID = co.RegistrationID AND co.orderstatus = 'completed'
         GROUP BY v.CompanyName, ft.TruckName
         ORDER BY TotalRevenue DESC
     """
@@ -84,20 +136,26 @@ def high_value_menu_items(conn):
 def update_customer_contact(conn):
     print("\nUpdate Customer Phone Number")
     cid = input("Enter Customer ID: ").strip()
+    if not cid.isdigit():
+        print("\nCustomer ID must be a whole number. No changes made.")
+        return
     new_phone = input("Enter New Phone Number: ").strip()
+    if not new_phone:
+        print("\nPhone number cannot be empty. No changes made.")
+        return
 
     query = "UPDATE Customer SET Phone = %s WHERE CustomerID = %s"
     cursor = conn.cursor()
     try:
         cursor.execute(query, (new_phone, cid))
         if cursor.rowcount == 0:
-           print("\n[Notice]: No customer found with that ID. No chnages made.")
+            print("\nNo customer found with that ID. No changes made.")
         else:
             conn.commit()
             print(f"\nSuccessfully updated phone number for Customer ID {cid}.")
-    except Error as e:
+    except Error:
         conn.rollback()
-        print(f"\n[Error]: {e}")
+        raise  # app.py shows a friendly message instead of the raw MySQL error
     finally:
         cursor.close()
 
@@ -249,6 +307,22 @@ def update_food_truck_vendor(conn, truck_id, new_vendor_id):
         raise
     finally:
         cursor.close()
+
+
+# -------------------- TRANSACTION: PLACE ORDER --------------------
+
+def place_order(conn, order_id, customer_id, registration_id, payment_method, items):
+    """
+    TODO (team): write this yourselves -- Section 5 says the transaction
+    design and its COMMIT/ROLLBACK logic must be done without AI.
+
+    Called by app.py "Place an order". Arguments:
+      items: list of (menu_item_id, quantity) tuples
+    Return True if the order was saved, False if it was rolled back.
+    Let mysql.connector.Error propagate (after rolling back) if you want
+    app.py to show its friendly message for the error code.
+    """
+    raise NotImplementedError
 
 
 # -------------------- DELETE FOOD TRUCK --------------------
