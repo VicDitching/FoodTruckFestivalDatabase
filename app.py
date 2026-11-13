@@ -8,7 +8,6 @@ friendly messages. All SQL lives in food_truck_functions.py.
 """
 
 import mysql.connector
-from mysql.connector import errorcode
 
 import food_truck_functions as ftf
 
@@ -33,35 +32,7 @@ def ask_text(prompt, required=True):
         print("  This field cannot be empty.")
 
 
-def friendly_error(err):
-    """Translate an expected MySQL error into a message for the user."""
-    code = getattr(err, "errno", None)
-    msg = str(err)
-
-    if code == errorcode.ER_DUP_ENTRY:                      # 1062
-        if "PRIMARY" in msg:
-            return "That ID is already in use. Please choose a different ID."
-        if "Email" in msg or "email" in msg:
-            return "This email is already registered."
-        if "LicensePlate" in msg:
-            return "That license plate is already registered to another truck."
-        return "That value is already in use and must be unique."
-    if code == errorcode.ER_NO_REFERENCED_ROW_2:            # 1452
-        return ("One of the IDs you entered does not exist "
-                "(for example the customer, booth registration, or menu item).")
-    if code == errorcode.ER_ROW_IS_REFERENCED_2:            # 1451
-        return "This record is still used by other records and cannot be removed."
-    if code in (errorcode.ER_TABLEACCESS_DENIED_ERROR,      # 1142
-                errorcode.ER_COLUMNACCESS_DENIED_ERROR,     # 1143
-                errorcode.ER_DBACCESS_DENIED_ERROR):        # 1044
-        return "You do not have permission to perform this action."
-    if code == 3819:                                        # CHECK constraint
-        return "One of the values is not allowed (it breaks a data rule)."
-    if code == errorcode.ER_BAD_NULL_ERROR:                 # 1048
-        return "A required field was left empty."
-    if code == errorcode.ER_DATA_TOO_LONG:                  # 1406
-        return "One of the values you typed is too long."
-    return "The database could not complete that request. Please try again."
+friendly_error = ftf.friendly_error  # shared with food_truck_functions
 
 
 def run_feature(func):
@@ -82,7 +53,7 @@ def action_search_customers(conn):
 
 
 def action_list_trucks(conn):
-    print("\nFood Trucks and Their Vendors")
+    ftf.print_heading("Food Trucks and Their Vendors")
     rows = ftf.get_all_food_trucks(conn)
     ftf.print_table(
         ["Truck ID", "Truck Name", "Plate", "Vendor ID", "Vendor"],
@@ -92,17 +63,18 @@ def action_list_trucks(conn):
 
 
 def action_truck_menu(conn):
-    truck_id = ask_int("Enter Truck ID: ")
+    ftf.print_heading("View a Truck's Menu")
+    truck_id = ask_int("Truck ID (option 4 lists them): ")
     truck = ftf.get_food_truck(conn, truck_id)
     if truck is None:
         print("\nNo food truck found with that ID.")
         return
-    print(f"\nMenu for {truck['TruckName']}")
+    print(f"\nMenu for {truck['TruckName']}:")
     rows = ftf.get_food_truck_menu(conn, truck_id)
     ftf.print_table(
-        ["Item ID", "Item", "Price ($)", "Dietary", "Available"],
-        [(r["MenuItemID"], r["ItemName"], r["Price"], r["DietaryFlags"] or "-",
-          "Yes" if r["Availability"] else "No") for r in rows],
+        ["Item ID", "Item", "Price ($)", "Dietary Flags", "Available"],
+        [(r["MenuItemID"], r["ItemName"], r["Price"], r["DietaryFlags"],
+          r["Availability"]) for r in rows],
     )
 
 
@@ -115,7 +87,7 @@ def action_premium_items(conn):
 
 
 def action_add_customer(conn):
-    print("\nRegister a New Customer")
+    ftf.print_heading("Register a New Customer")
     customer_id = ask_int("Customer ID: ")
     first = ask_text("First name: ")
     last = ask_text("Last name: ")
@@ -130,7 +102,7 @@ def action_update_phone(conn):
 
 
 def action_place_order(conn):
-    print("\nPlace an Order")
+    ftf.print_heading("Place an Order")
     order_id = ask_int("New Order ID: ")
     customer_id = ask_int("Customer ID: ")
     registration_id = ask_int("Booth Registration ID (truck at an event): ")
@@ -164,7 +136,7 @@ def action_place_order(conn):
 
 
 def action_delete_truck(conn):
-    print("\nRemove a Food Truck")
+    ftf.print_heading("Remove a Food Truck")
     truck_id = ask_int("Truck ID to remove: ")
     count = ftf.delete_food_truck(conn, truck_id)
     if count == 0:
@@ -173,28 +145,52 @@ def action_delete_truck(conn):
         print(f"\nFood truck {truck_id} was removed.")
 
 
-MENU = [
-    ("Search customers by last name",                 action_search_customers),
-    ("List food trucks with their vendors",           action_list_trucks),
-    ("View a truck's menu",                           action_truck_menu),
-    ("Vendor sales & order summary",                  action_sales_summary),
-    ("Premium menu items (above average price)",      action_premium_items),
-    ("Register a new customer",                       action_add_customer),
-    ("Update a customer's phone number",              action_update_phone),
-    ("Place an order",                                action_place_order),
-    ("Remove a food truck",                           action_delete_truck),
+# (section title, [(menu label, action), ...]) -- numbering runs across sections
+MENU_SECTIONS = [
+    ("Customers", [
+        ("Search customers by last name",            action_search_customers),
+        ("Register a new customer",                  action_add_customer),
+        ("Update a customer's phone number",         action_update_phone),
+    ]),
+    ("Trucks & Menus", [
+        ("List food trucks with their vendors",      action_list_trucks),
+        ("View a truck's menu",                      action_truck_menu),
+        ("Premium menu items (above average price)", action_premium_items),
+    ]),
+    ("Orders & Reports", [
+        ("Place an order",                           action_place_order),
+        ("Vendor sales & order summary",             action_sales_summary),
+    ]),
+    ("Admin", [
+        ("Remove a food truck",                      action_delete_truck),
+    ]),
 ]
+MENU = [item for _, items in MENU_SECTIONS for item in items]
+
+
+def show_menu():
+    print("\n" + "=" * 48)
+    print("        FOOD TRUCK FESTIVAL PORTAL")
+    print("=" * 48)
+    number = 1
+    for title, items in MENU_SECTIONS:
+        print(f"\n {title}")
+        for label, _ in items:
+            print(f"   {number}. {label}")
+            number += 1
+    print("\n   0. Exit")
+
+
+def pause():
+    input("\nPress Enter to return to the menu...")
 
 
 def main():
     conn = ftf.connect_db()
     try:
         while True:
-            print("\n========== Food Truck Festival Portal ==========")
-            for i, (label, _) in enumerate(MENU, start=1):
-                print(f" {i}. {label}")
-            print(" 0. Exit")
-            choice = input("Choose an option: ").strip()
+            show_menu()
+            choice = input("\nChoose an option: ").strip()
 
             if choice == "0":
                 print("Goodbye!")
@@ -211,6 +207,7 @@ def main():
             # nothing is pending at this point.
             conn.commit()
             run_feature(lambda: action(conn))
+            pause()
     except (KeyboardInterrupt, EOFError):
         print("\nGoodbye!")
     finally:

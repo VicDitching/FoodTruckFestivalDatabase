@@ -32,22 +32,26 @@ The password is never stored in the code or in this README.
 
 ## Features
 
-| # | Menu option | Requirement covered | Function |
+| Menu # | Menu option | Requirement covered | Function |
 |---|-------------|---------------------|----------|
 | 1 | Search customers by last name | Search (SELECT + WHERE) | `search_customers` |
-| 2 | TODO | Combine tables (JOIN) | TODO |
-| 3 | Vendor sales & order summary | Summary (GROUP BY) | `vendor_sales_summary` |
-| 4 | Premium menu items | Subquery | `high_value_menu_items` |
-| 5 | Register a new customer | Add (INSERT) | `add_customer` |
-| 6 | Update a customer's phone number | Change (UPDATE) | `update_customer_contact` |
-| 7 | Place an order | Transaction | `place_order` |
+| 4 | List food trucks with their vendors | Combine tables (JOIN) | `get_all_food_trucks` |
+| 8 | Vendor sales & order summary | Summary (GROUP BY + COUNT/SUM) | `vendor_sales_summary` |
+| 6 | Premium menu items (above average price) | Subquery | `high_value_menu_items` |
+| 2 | Register a new customer | Add (INSERT) | `add_customer` |
+| 3 | Update a customer's phone number | Change (UPDATE) | `update_customer_contact` |
+| 7 | Place an order | Transaction (INSERT CustomerOrder + INSERT OrderItem rows, COMMIT/ROLLBACK) | `place_order` |
 
-**Constraint demo:** TODO (e.g. registering a customer with an ID or email that is already used)
-**Refused operation demo:** "Remove a food truck". `ftf_app` has no DELETE permission, so MySQL refuses it (error 1142).
+Option 5 (View a truck's menu) is an extra feature.
+
+**Constraint demo:** Register a customer (option 2) using a Customer ID that already exists. The PRIMARY KEY rejects it and the app says "That ID is already in use."
+**Refused operation demo:** "Remove a food truck" (option 9). `ftf_app` has no DELETE permission, so MySQL refuses it (error 1142) and the app says "You do not have permission to delete records."
 
 ## Schema changes since the design
 
-- TODO (e.g. `Zipcode` changed from INT to VARCHAR(10), `MenuItem.Availability` changed to BOOLEAN, any UNIQUE/CHECK added)
+- `Location.Zipcode` changed from INT to VARCHAR(10) (zip codes are labels, not numbers, and can have leading zeros).
+- `MenuItem.Availability` changed from VARCHAR(45) to BOOLEAN.
+- Fixed the `OrderItem` column name from `MenuItem` to `MenuItemID` so it matches its primary and foreign key.
 
 ## AI use
 
