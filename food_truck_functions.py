@@ -201,7 +201,7 @@ def update_customer_contact(conn):
     finally:
         cursor.close()
 
-# -------------------- READ FOOD TRUCKS --------------------
+# Read Food Trucks
 
 def get_all_food_trucks(conn):
     """Return every food truck and its info"""
@@ -248,7 +248,7 @@ def get_food_truck_menu(conn, truck_id):
         cursor.close()
 
 
-# -------------------- ADD --------------------
+# Add stuff
 
 def add_food_truck(conn, truck_id, truck_name, license_plate, vendor_id):
     """Insert a food truck, VendorID needs to be an existing vendor"""
@@ -285,7 +285,7 @@ def add_customer(conn, customer_id, first_name, last_name, email, phone):
         cursor.close()
 
 
-# -------------------- EDIT FOOD TRUCKS --------------------
+# Edit Food Trucks
 
 def update_food_truck(conn, truck_id, truck_name, license_plate, vendor_id):
     """Update all editable fields for the truck with this TruckID."""
@@ -351,7 +351,7 @@ def update_food_truck_vendor(conn, truck_id, new_vendor_id):
         cursor.close()
 
 
-# -------------------- TRANSACTION: PLACE ORDER (written by the team) --------------------
+# Place ORders
 
 #transaction 
 def place_order(conn, order_id, customer_id, registration_id, payment_method, items):
@@ -399,7 +399,7 @@ def place_order(conn, order_id, customer_id, registration_id, payment_method, it
         cursor.close()
 
 
-# -------------------- DELETE FOOD TRUCK --------------------
+# Delete Foodie
 
 def delete_food_truck(conn, truck_id):
     """Delete a truck by ID."""
