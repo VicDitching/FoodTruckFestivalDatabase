@@ -159,6 +159,52 @@ def update_customer_contact(conn):
     finally:
         cursor.close()
 
+#transaction 
+def place_order(conn, order_id, customer_id, registration_id, payment_method, items):
+    print("\nPlace a customer order with multiple items.")
+    cursor= conn.cursor()
+    try:
+        total_amount = Decimal('0.00')
+        item_data = []
+
+        #verifies items and calculates the total amount
+        for menu_item_id, quantity in items:
+            price_query = "SELECT Price FROM MenuItem WHERE MenuItemID = %s"
+            cursor.execute(price_query, (menu_item_id,))
+            row = cursor.fetchone()
+            if not row:
+                print(f"\n[Error]: Menu Item ID {menu_item_id} does not exist.")
+                conn.rollback()
+                return False
+            unit_price= row[0]
+            total amount += unit_price * quantity
+            item_data.append((menu_item_id, quantity, unit_price))
+
+        #inserts the main order record into CustomerOrder
+        order query = """
+            INSERT INTO CustomerOrder(OrderID, OrderDateTime, OrderStatus, TotalAmount, PaymentMethod, CustomerID, RegistrationID)
+            VALUES (%s, NOW(), 'Completed', %s, %s, %s, %s)
+        """
+        cursor.execute(order_query, (order_id, total_amount, payment_method, customer_id, registration_id))
+
+        #inserts all items into OrderItem
+        item query = """
+            INSERT INTO OrderItem(OrderID, MenuItemID, Quantity, UnitPriceAtSale)
+            VALUES(%s, %s, %s, %s)
+        """
+        for menu_item_id, quantity, unit_price in item_data:
+            cursor.execute(item_query, (order_id, menu_item_id, quantity, unit_price))
+
+        #commit transaction if all steps succeed
+        conn.commit()
+        return True
+    except Error as e:
+        conn.rollback()
+        print(f"\n[Error]: {e}")
+        return False
+    finally:
+        cursor.close()
+
 # -------------------- READ FOOD TRUCKS --------------------
 
 def get_all_food_trucks(conn):
