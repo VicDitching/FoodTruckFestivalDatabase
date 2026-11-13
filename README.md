@@ -57,9 +57,11 @@ The password is never stored in the code or in this README.
 - All required SQL, the parameterized queries, the account grants, and the transaction logic were written by the team.
 
 ## Team
-
-| Member | Responsibilities |
-|--------|------------------|
-| Jay | | - created the GUI of the database - contributed in creating the database and functions |
-| Victoria | | - created the sql for both customer and vendor account - contributed in creating the database and functions |
+Member: Jay 
+- created the GUI of the database
+- contributed in creating the database and functions
+  
+Member: Victoria
+- created the sql for both customer and vendor account
+- contributed in creating the database and functions
 
