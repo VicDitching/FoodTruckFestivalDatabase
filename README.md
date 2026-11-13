@@ -58,6 +58,7 @@ Option 5 (View a truck's menu) is an extra feature.
 - Sample data in `setup.sql` was generated with AI and checked by the team.
 - The menu/interface code in `app.py` (menus, input prompts, friendly error messages) was written with AI help.
 - AI was used to debug the interface/connection code, and to review our SQL and point out bugs. The SQL fixes themselves were written by the team.
+- AI was used to help format the README
 - All required SQL, the parameterized queries, the account grants, and the transaction logic were written by the team.
 
 ## Team
