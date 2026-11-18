@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Log in · Food Truck Festival Portal{% endblock %}
+{% block content %}
+<div style="max-width: 430px; margin: 30px auto;">
+  <div class="panel pink">
+    <h1 style="text-align:center">Welcome back!</h1>
+    <p class="sub" style="text-align:center">Log in to the festival portal.</p>
+    <form method="post">
+      <div class="field">
+        <label for="username">Who's visiting?</label>
+        <select id="username" name="username">
+          <option value="ftf_app" {{ 'selected' if username == 'ftf_app' }}>ftf_app (admin)</option>
+          <option value="ftf_guest" {{ 'selected' if username == 'ftf_guest' }}>ftf_guest (guest)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+      </div>
+      <button type="submit" style="width:100%">Let's eat! →</button>
+    </form>
+  </div>
+  <p class="hint" style="text-align:center">Admins manage customers, orders and reports.<br>Guests can browse every truck and its menu.</p>
+</div>
+{% endblock %}

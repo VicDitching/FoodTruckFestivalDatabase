@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Food Truck Festival Portal{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Bright theme only (the team asked for a bright, soft look). */
+    :root { color-scheme: light; }
+    :root {
+      --bg: #fff8f3;
+      --bg-blob-1: #ffe3ec; --bg-blob-2: #e4f7ff; --bg-blob-3: #fff3c9;
+      --panel: #ffffff; --text: #3d2c4e; --muted: #8a7b99;
+      --line: #f6e3ea; --line-strong: #f0cddb;
+      --accent: #ff6b8b; --accent-dark: #e8506f; --accent-ink: #ffffff; --accent-soft: #ffe8ee;
+      --mint: #2fbf8f; --mint-soft: #ddf8ee;
+      --sun: #ffc94d; --sun-soft: #fff4d1;
+      --sky: #5cb8ff; --sky-soft: #e2f3ff;
+      --grape: #a78bfa; --grape-soft: #f0eaff;
+      --err-ink: #d94368; --err-bg: #ffe6ec;
+      --ok-ink: #1f9a72; --ok-bg: #ddf8ee;
+      --head-bg: #fff2f6; --row-hover: #fff9fb;
+      --shadow: 0 2px 4px rgba(255, 107, 139, .06), 0 10px 30px rgba(167, 139, 250, .10);
+      --shadow-btn: 0 4px 0 var(--accent-dark);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      font: 16px/1.55 "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 8% 12%, var(--bg-blob-1) 0, transparent 32%),
+        radial-gradient(circle at 92% 18%, var(--bg-blob-2) 0, transparent 30%),
+        radial-gradient(circle at 50% 100%, var(--bg-blob-3) 0, transparent 40%),
+        var(--bg);
+      background-attachment: fixed;
+    }
+    h1, h2, .brand, button, .btn, nav a, .badge { font-family: "Fredoka", "Nunito", system-ui, sans-serif; }
+    a { color: var(--accent-dark); }
+
+    /* ---------- header ---------- */
+    header { padding: 14px 16px 0; }
+    .bar { max-width: 1100px; margin: 0 auto; padding: 10px 14px; display: flex; align-items: center;
+           gap: 14px; flex-wrap: wrap; background: var(--panel); border-radius: 999px;
+           border: 2px solid var(--line); box-shadow: var(--shadow); }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 19px;
+             text-decoration: none; color: var(--text); padding: 0 6px; }
+    .brand span { color: var(--accent); }
+    nav { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+    nav a { text-decoration: none; color: var(--text); padding: 7px 14px; border-radius: 999px;
+            font-weight: 500; transition: background .15s, transform .15s; }
+    nav a:hover { background: var(--accent-soft); transform: translateY(-1px); }
+    nav a.active { background: var(--accent); color: var(--accent-ink); }
+    .who { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; padding-right: 6px; }
+    .badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; letter-spacing: .02em; }
+    .badge.admin { background: var(--grape-soft); color: var(--grape); }
+    .badge.guest { background: var(--sky-soft); color: var(--sky); }
+
+    /* ---------- page ---------- */
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 16px 56px; }
+    h1 { font-size: 30px; font-weight: 600; margin: 0 0 4px; letter-spacing: -.01em; }
+    h2 { font-size: 19px; font-weight: 600; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+    .sub { color: var(--muted); margin: 0 0 22px; font-size: 16px; }
+    .panel { background: var(--panel); border: 2px solid var(--line); border-radius: 22px;
+             padding: 22px; box-shadow: var(--shadow); margin-bottom: 22px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px; }
+    .panel.pink  { border-top: 6px solid var(--accent); }
+    .panel.mint  { border-top: 6px solid var(--mint); }
+    .panel.sky   { border-top: 6px solid var(--sky); }
+    .panel.sun   { border-top: 6px solid var(--sun); }
+    .panel.grape { border-top: 6px solid var(--grape); }
+
+    /* ---------- messages ---------- */
+    .flash { display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-radius: 16px;
+             margin-bottom: 18px; font-weight: 600; animation: pop .25s ease-out; }
+    .flash.ok { background: var(--ok-bg); color: var(--ok-ink); }
+    .flash.error { background: var(--err-bg); color: var(--err-ink); }
+    @keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    /* ---------- tables ---------- */
+    .table-wrap { overflow-x: auto; border-radius: 16px; border: 2px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    th, td { padding: 11px 14px; text-align: left; vertical-align: top; }
+    td { border-top: 1px solid var(--line); }
+    th { white-space: nowrap; background: var(--head-bg); font-family: "Fredoka", sans-serif; font-weight: 500; font-size: 13px;
+         color: var(--accent-dark); letter-spacing: .02em; }
+    tbody tr { transition: background .12s; }
+    tbody tr:hover { background: var(--row-hover); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td a { font-weight: 700; text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+    .count { color: var(--muted); font-size: 14px; margin: 12px 4px 0; }
+    .empty { text-align: center; padding: 26px; color: var(--muted); }
+    .pill { display: inline-block; white-space: nowrap; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+    .pill.yes { background: var(--mint-soft); color: var(--ok-ink); }
+    .pill.no { background: var(--err-bg); color: var(--err-ink); }
+
+    /* ---------- forms ---------- */
+    label { display: block; font-size: 14px; font-weight: 700; margin: 0 0 5px; }
+    input, select { width: 100%; padding: 10px 14px; border: 2px solid var(--line-strong); border-radius: 14px;
+                    background: var(--panel); color: var(--text); font: inherit; transition: border-color .15s, box-shadow .15s; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+    .field { margin-bottom: 14px; }
+    .row { display: flex; gap: 12px; align-items: flex-end; }
+    .row .field { flex: 1; }
+    button, .btn { display: inline-block; border: 0; border-radius: 999px; padding: 10px 22px; font-size: 16px;
+                   font-weight: 600; cursor: pointer; background: var(--accent); color: var(--accent-ink);
+                   text-decoration: none; box-shadow: var(--shadow-btn); transition: transform .1s, box-shadow .1s; }
+    button:hover, .btn:hover { transform: translateY(-1px); }
+    button:active, .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--accent-dark); }
+    button.secondary { background: var(--sky-soft); color: var(--sky); box-shadow: none; }
+    button.danger { background: var(--err-bg); color: var(--err-ink); box-shadow: none; padding: 5px 14px; font-size: 14px; }
+    button.link { background: none; color: var(--muted); padding: 0; box-shadow: none; font-family: "Nunito", sans-serif;
+                  font-weight: 600; text-decoration: underline; font-size: 14px; }
+    button.link:hover, button.secondary:hover, button.danger:hover { transform: none; }
+    .hint { color: var(--muted); font-size: 14px; }
+
+    @media (max-width: 1060px) {
+      .bar { border-radius: 26px; }
+      .who { margin-left: auto; }
+      nav { order: 3; flex-basis: 100%; border-top: 2px dashed var(--line); padding-top: 8px; }
+    }
+    @media (max-width: 720px) {
+      .row { flex-direction: column; align-items: stretch; }
+      h1 { font-size: 25px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <a class="brand" href="{{ url_for('trucks') }}">Food Truck <span>Fest</span></a>
+      {% if user %}
+      <nav>
+        {% set ep = request.endpoint %}
+        <a href="{{ url_for('trucks') }}" class="{{ 'active' if ep in ('trucks','truck_menu') }}">Food Trucks</a>
+        {% if role == 'admin' %}
+        <a href="{{ url_for('customers') }}" class="{{ 'active' if ep == 'customers' }}">Customers</a>
+        <a href="{{ url_for('new_order') }}" class="{{ 'active' if ep == 'new_order' }}">Place Order</a>
+        <a href="{{ url_for('premium') }}" class="{{ 'active' if ep == 'premium' }}">Premium Items</a>
+        <a href="{{ url_for('sales') }}" class="{{ 'active' if ep == 'sales' }}">Sales Report</a>
+        {% endif %}
+      </nav>
+      <div class="who">
+        <span class="badge {{ role }}">{{ role }}</span> {{ user }}
+        <form method="post" action="{{ url_for('logout') }}"><button class="link">Log out</button></form>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

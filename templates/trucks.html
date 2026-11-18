@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% import "_table.html" as t %}
+{% block content %}
+<h1>Food Trucks</h1>
+<p class="sub">Every truck at the festival and the vendor behind it. Tap a truck to peek at its menu!</p>
+<div class="panel pink">
+  {% if role == 'admin' %}
+    {% macro remove(r) %}
+      <form method="post" action="{{ url_for('delete_truck', truck_id=r.raw[0]) }}"
+            onsubmit="return confirm('Remove {{ r.cells[1]|e }}?');">
+        <button class="danger" type="submit">Remove</button>
+      </form>
+    {% endmacro %}
+    {{ t.render(table, remove, empty="No food trucks yet.") }}
+  {% else %}
+    {{ t.render(table, empty="No food trucks yet.") }}
+  {% endif %}
+</div>
+{% endblock %}

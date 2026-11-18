@@ -1,0 +1,31 @@
+{# Renders a table built by make_table() in web_app.py #}
+{% macro render(table, actions=None, empty="Nothing here yet!") %}
+  {% if not table.rows %}
+    <div class="empty">{{ empty }}</div>
+  {% else %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        {% for h in table.headers %}<th class="{{ 'num' if table.numeric[loop.index0] }}">{{ h }}</th>{% endfor %}
+        {% if actions %}<th></th>{% endif %}
+      </tr></thead>
+      <tbody>
+        {% for r in table.rows %}
+        <tr>
+          {% for c in r.cells %}
+          {% set h = table.headers[loop.index0] %}
+          <td class="{{ 'num' if table.numeric[loop.index0] }}">
+            {%- if r.link and loop.index0 == 1 -%}<a href="{{ r.link }}">{{ c }}</a>
+            {%- elif h == 'Available' -%}<span class="pill {{ 'yes' if c == 'Yes' else 'no' }}">{{ 'Yes' if c == 'Yes' else 'Sold out' }}</span>
+            {%- else -%}{{ c }}{%- endif -%}
+          </td>
+          {% endfor %}
+          {% if actions %}<td>{{ actions(r) }}</td>{% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="count">{{ table.rows|length }} record{{ '' if table.rows|length == 1 else 's' }} found</p>
+  {% endif %}
+{% endmacro %}

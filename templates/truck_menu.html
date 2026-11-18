@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% import "_table.html" as t %}
+{% block content %}
+<p><a href="{{ url_for('trucks') }}">← All food trucks</a></p>
+<h1>{{ truck.TruckName }}</h1>
+<p class="sub">Truck #{{ truck.TruckID }} · plate {{ truck.LicensePlate }}</p>
+<div class="panel sun">
+  <h2>Menu</h2>
+  {{ t.render(table, empty="This truck hasn't posted a menu yet.") }}
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Place an Order</h1>
+<p class="sub">The order and all its items are saved together. If any part fails, nothing is saved.</p>
+<div class="panel mint">
+  <form method="post">
+    <div class="row">
+      <div class="field"><label for="order_id">New Order ID</label>
+        <input id="order_id" name="order_id" inputmode="numeric" value="{{ form.get('order_id', '') }}" required></div>
+      <div class="field"><label for="customer_id">Customer ID</label>
+        <input id="customer_id" name="customer_id" inputmode="numeric" value="{{ form.get('customer_id', '') }}" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="registration_id">Booth Registration ID (truck at an event)</label>
+        <input id="registration_id" name="registration_id" inputmode="numeric" value="{{ form.get('registration_id', '') }}" required></div>
+      <div class="field"><label for="payment">Payment method</label>
+        <select id="payment" name="payment">
+          {% for p in ['Card', 'Cash', 'Mobile Pay'] %}
+          <option {{ 'selected' if form.get('payment') == p }}>{{ p }}</option>
+          {% endfor %}
+        </select></div>
+    </div>
+
+    <h2 style="margin-top:8px">Items</h2>
+    <p class="hint">Menu item IDs are listed on each truck's menu page. Leave unused rows empty.</p>
+    <div id="items">
+      {% for item, qty in item_rows %}
+      <div class="row item">
+        <div class="field"><label>Menu Item ID</label><input name="item_id" inputmode="numeric" value="{{ item }}"></div>
+        <div class="field"><label>Quantity</label><input name="qty" inputmode="numeric" value="{{ qty }}"></div>
+      </div>
+      {% endfor %}
+    </div>
+    <p><button type="button" class="secondary" onclick="addItem()">+ Add another item</button></p>
+    <button type="submit">Place order</button>
+  </form>
+</div>
+<script>
+  function addItem() {
+    const rows = document.querySelectorAll('#items .item');
+    const copy = rows[rows.length - 1].cloneNode(true);
+    copy.querySelectorAll('input').forEach((input, i) => input.value = i === 1 ? '1' : '');
+    document.getElementById('items').appendChild(copy);
+  }
+</script>
+{% endblock %}

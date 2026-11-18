@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import "_table.html" as t %}
+{% block content %}
+<h1>Customers</h1>
+<p class="sub">Look up, welcome, and update our festival friends.</p>
+
+<div class="panel sky">
+  <h2>Search by last name</h2>
+  <form method="get" class="row">
+    <div class="field"><label for="q">Last name (or the first few letters)</label>
+      <input id="q" name="q" value="{{ term }}" placeholder="e.g. Mar"></div>
+    <div class="field" style="flex:0"><button type="submit">Search</button></div>
+  </form>
+  {% if table is not none %}{{ t.render(table, empty="No customers match that name.") }}{% endif %}
+</div>
+
+<div class="grid">
+  <div class="panel mint">
+    <h2>Register a new customer</h2>
+    <form method="post" action="{{ url_for('add_customer') }}">
+      <div class="field"><label for="cid">Customer ID</label><input id="cid" name="customer_id" inputmode="numeric" required></div>
+      <div class="row">
+        <div class="field"><label for="first">First name</label><input id="first" name="first" required></div>
+        <div class="field"><label for="last">Last name</label><input id="last" name="last" required></div>
+      </div>
+      <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" required></div>
+      <div class="field"><label for="phone">Phone (optional)</label><input id="phone" name="phone"></div>
+      <button type="submit">Register customer</button>
+    </form>
+  </div>
+
+  <div class="panel sun">
+    <h2>Update a phone number</h2>
+    <form method="post" action="{{ url_for('update_phone') }}">
+      <div class="field"><label for="ucid">Customer ID</label><input id="ucid" name="customer_id" inputmode="numeric" required></div>
+      <div class="field"><label for="uphone">New phone number</label><input id="uphone" name="phone" required></div>
+      <button type="submit">Update phone</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

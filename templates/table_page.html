@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% import "_table.html" as t %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="sub">{{ subtitle }}</p>
+<div class="panel {{ color or 'grape' }}">{{ t.render(table) }}</div>
+{% endblock %}

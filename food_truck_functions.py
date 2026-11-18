@@ -126,24 +126,35 @@ def friendly_error(err):
     return "The database could not complete that request. Please try again."
 
 
+# Each feature below is split in two:
+#   - a data function that runs the team's SQL and returns the result
+#     (used by both the command-line app and the web app), and
+#   - a command-line wrapper that asks for input and prints the result.
+# The SQL itself is unchanged.
+
 #search (SELECT with WHERE)
-def search_customers(conn):
-    print_heading("Search Customers by Last Name")
-    term = input("Last name (or first few letters): ").strip()
+def find_customers_by_last_name(conn, term):
     query = """
         SELECT CustomerID, FirstName, LastName, Email, Phone, CreatedAt
         FROM Customer
         WHERE LastName LIKE %s
     """
     cursor = conn.cursor()
-    cursor.execute(query, (f"{term}%",))
-    rows = cursor.fetchall()
+    try:
+        cursor.execute(query, (f"{term}%",))
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+
+
+def search_customers(conn):
+    print_heading("Search Customers by Last Name")
+    term = input("Last name (or first few letters): ").strip()
+    rows = find_customers_by_last_name(conn, term)
     print_table(["ID", "First Name", "Last Name", "Email", "Phone", "Created At"], rows)
-    cursor.close()
 
 #summary (GROUP BY with COUNT and SUM)
-def vendor_sales_summary(conn):
-    print_heading("Vendor Sales & Order Summary (completed orders)")
+def get_vendor_sales_summary(conn):
     query = """
         SELECT v.CompanyName, ft.TruckName, COUNT(co.OrderID) AS TotalOrders, COALESCE(SUM(co.TotalAmount), 0.00) AS TotalRevenue
         FROM FoodTruck ft
@@ -154,14 +165,20 @@ def vendor_sales_summary(conn):
         ORDER BY TotalRevenue DESC
     """
     cursor = conn.cursor()
-    cursor.execute(query)
-    rows = cursor.fetchall()
-    print_table(["Vendor", "Truck Name", "Orders Placed", "Total Sales ($)"], rows)
-    cursor.close()
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+
+
+def vendor_sales_summary(conn):
+    print_heading("Vendor Sales & Order Summary (completed orders)")
+    print_table(["Vendor", "Truck Name", "Orders Placed", "Total Sales ($)"],
+                get_vendor_sales_summary(conn))
 
 #subquery (above-average menu items)
-def high_value_menu_items(conn):
-    print_heading("Premium Menu Items (priced above the average item)")
+def get_premium_menu_items(conn):
     query = """
         SELECT MenuItemID, ItemName, Price, DietaryFlags, Availability
         FROM MenuItem
@@ -169,12 +186,35 @@ def high_value_menu_items(conn):
         ORDER BY Price DESC
     """
     cursor = conn.cursor()
-    cursor.execute(query)
-    rows = cursor.fetchall()
-    print_table(["Item ID", "Item Name", "Price ($)", "Dietary Flags", "Available"], rows)
-    cursor.close()
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+
+
+def high_value_menu_items(conn):
+    print_heading("Premium Menu Items (priced above the average item)")
+    print_table(["Item ID", "Item Name", "Price ($)", "Dietary Flags", "Available"],
+                get_premium_menu_items(conn))
 
 #change (UPDATE)
+def update_customer_phone(conn, cid, new_phone):
+    """Returns the number of customers matched (0 means no such customer)."""
+    query = "UPDATE Customer SET Phone = %s WHERE CustomerID = %s"
+    cursor = conn.cursor()
+    try:
+        cursor.execute(query, (new_phone, cid))
+        if cursor.rowcount > 0:
+            conn.commit()
+        return cursor.rowcount
+    except Error:
+        conn.rollback()
+        raise  # the caller shows a friendly message instead of the raw MySQL error
+    finally:
+        cursor.close()
+
+
 def update_customer_contact(conn):
     print_heading("Update a Customer's Phone Number")
     cid = input("Customer ID: ").strip()
@@ -186,20 +226,10 @@ def update_customer_contact(conn):
         print("\nPhone number cannot be empty. No changes made.")
         return
 
-    query = "UPDATE Customer SET Phone = %s WHERE CustomerID = %s"
-    cursor = conn.cursor()
-    try:
-        cursor.execute(query, (new_phone, cid))
-        if cursor.rowcount == 0:
-            print("\nNo customer found with that ID. No changes made.")
-        else:
-            conn.commit()
-            print(f"\nSuccessfully updated phone number for Customer ID {cid}.")
-    except Error:
-        conn.rollback()
-        raise  # app.py shows a friendly message instead of the raw MySQL error
-    finally:
-        cursor.close()
+    if update_customer_phone(conn, cid, new_phone) == 0:
+        print("\nNo customer found with that ID. No changes made.")
+    else:
+        print(f"\nSuccessfully updated phone number for Customer ID {cid}.")
 
 # Read Food Trucks
 

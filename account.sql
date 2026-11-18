@@ -16,4 +16,12 @@ GRANT SELECT ON FoodTruckFestival.* TO 'ftf_vendor'@'localhost';
 GRANT INSERT, UPDATE ON FoodTruckFestival.MenuItem TO 'ftf_vendor'@'localhost'; 
 GRANT UPDATE ON FoodTruckFestival.FoodTruck TO 'ftf_vendor'@'localhost'; 
 
-FLUSH PRIVILEGES; 
+DROP USER IF EXISTS 'ftf_guest'@'localhost'; 
+CREATE USER 'ftf_guest'@'localhost' IDENTIFIED BY 'GuestPass2026!'; 
+ 
+GRANT SELECT ON FoodTruckFestival.FoodTruck TO 'ftf_guest'@'localhost'; 
+GRANT SELECT ON FoodTruckFestival.MenuItem TO 'ftf_guest'@'localhost'; 
+GRANT SELECT ON FoodTruckFestival.Vendor TO 'ftf_guest'@'localhost'; 
+
+
+FLUSH PRIVILEGES;
